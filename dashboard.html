@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Técnica - Risco de Fluxo de Detritos</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Inter:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0f1115;
+            --surface: #1e2128;
+            --surface-border: #333842;
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-ui);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1rem 2rem;
+            border-bottom: 2px solid var(--surface-border);
+            background: #15181e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 15px;
+            font-family: var(--font-data);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--surface);
+            border-right: 1px solid var(--surface-border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .panel-right {
+            border-right: none;
+            border-left: 1px solid var(--surface-border);
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        .section-header {
+            background: #252a33;
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            border-bottom: 1px solid var(--surface-border);
+            border-top: 1px solid var(--surface-border);
+        }
+
+        .section-header:first-child {
+            border-top: none;
+        }
+
+        .input-group {
+            padding: 15px;
+            border-bottom: 1px dashed #2c313c;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: #111317;
+            border: 1px solid #4a5568;
+            padding: 8px 10px;
+            border-radius: 4px;
+            color: white;
+            font-family: var(--font-data);
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+        }
+
+        .help-btn {
+            position: absolute;
+            right: 15px;
+            top: 12px;
+            background: #334155;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tooltip {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #475569;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .help-btn:hover+.tooltip,
+        .tooltip:hover {
+            display: block;
+        }
+
+        .dynamic-fields {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        button.btn-simular {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: auto;
+        }
+
+        button.btn-simular:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            position: relative;
+            background: #0f1115;
+            /* Blueprint grid background */
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .engine-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: var(--font-data);
+            font-size: 0.85rem;
+            color: var(--success);
+            pointer-events: none;
+        }
+
+        /* Results Panel */
+        .result-block {
+            padding: 15px;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-family: var(--font-data);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+        .result-value.danger {
+            color: var(--danger);
+        }
+
+        .result-value.warning {
+            color: var(--warning);
+        }
+
+        .result-value.success {
+            color: var(--success);
+        }
+
+        .result-details {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>CAE - Simulador de Impacto de Fluxo de Detritos</h1>
+        <div class="header-badges">
+            <span>ENGINE: KINEMATIC_SOLVER_V2</span>
+            <span>MODEL: TECHNICAL_WIRE</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Painel de Inputs -->
+        <aside class="panel">
+            <div class="section-header">🌍 Condições Hidrológicas do Terreno</div>
+
+            <div class="input-group">
+                <label>Distância até o Topo da Encosta/Morro (m)</label>
+                <button class="help-btn">?</button>
+                <div class="tooltip">Tamanho linear do morro acima do objeto. Se a montanha prossegue por 200 metros
+                    morro acima, coloque 200. Quanto maior a pista, mais água se acumula descendo.</div>
+                <input type="number" id="slopeDistance" value="100" min="10" step="10">
+            </div>
+
+            <div class="input-group">
+                <label>Intensidade da Chuva (mm/h)</label>
+                <input type="number" id="rainIntensity" value="80" min="0" max="300">
+            </div>
+
+            <div class="input-group">
+                <label>Duração da Chuva (horas)</label>
+                <input type="number" id="rainDuration" value="12" min="1" max="72">
+            </div>
+
+            <div class="input-group">
+                <label>Inclinação da Encosta a Montante (graus)</label>
+                <input type="number" id="slopeAngle" value="35" min="10" max="70">
+            </div>
+
+            <div class="section-header">🎯 Propriedades do Alvo a Jusante</div>
+
+            <div class="input-group">
+                <label>Objeto em Análise</label>
+                <select id="targetType" onchange="toggleTargetFields()">
+                    <option value="house">Estrutura Civil (Residência)</option>
+                    <option value="car">Veículo Automotor</option>
+                </select>
+            </div>
+
+            <!-- Campos da Casa -->
+            <div id="houseFields" class="dynamic-fields">
+                <div class="input-group">
+                    <label>Área Construída (m²)</label>
+                    <input type="number" id="houseArea" value="120" step="10">
+                </div>
+                <div class="input-group">
+                    <label>Número de Andares</label>
+                    <input type="number" id="houseFloors" value="1" min="1" max="5">
+                </div>
+                <div class="input-group">
+                    <label>Material Estrutural (Pilares/Fundação)</label>
+                    <button class="help-btn">?</button>
+                    <div class="tooltip">Define o limite de tensão de cisalhamento. Ex: Concreto Armado fck 25MPa possui
+                        alta coesão estrutural contra ruptura local.</div>
+                    <select id="houseMaterial">
+                        <option value="concreto_25">Concreto Armado (fck 25 MPa)</option>
+                        <option value="concreto_40">Concreto Armado (fck 40 MPa)</option>
+                        <option value="alvenaria">Alvenaria Estrutural</option>
+                        <option value="madeira">Madeira (Pilar 15x15cm)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Campos do Carro -->
+            <div id="carFields" class="dynamic-fields" style="display: none;">
+                <div class="input-group">
+                    <label>Massa do Veículo (kg)</label>
+                    <input type="number" id="carMass" value="1400" step="50">
+                </div>
+                <div class="input-group">
+                    <label>Composição das Portas Laterais</label>
+                    <button class="help-btn">?</button>
+                    <div class="tooltip">Determina o Limite de Escoamento (Yield Strength). Aços AHSS modernos são mais
+                        finos, mas flexíveis. Aços antigos deformavam plasticamente sob menor pressão mas perfuravam
+                        menos.</div>
+                    <select id="carMaterial">
+                        <option value="aco_antigo">Aço Carbono Espesso (Veículos < 2000)</option>
+                        <option value="ahss">Aço de Alta Resistência - AHSS (Veículos Atuais)</option>
+                        <option value="aluminio">Ligas de Alumínio (Veículos Premium)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Coef. de Atrito Estático (Pneu / Solo)</label>
+                    <button class="help-btn">?</button>
+                    <div class="tooltip">Refere-se ao coeficiente (\(\mu\)). Valores de Referência:<br>- Asfalto Seco:
+                        0.7 a 0.8<br>- Asfalto Molhado: 0.4 a 0.6<br>- Lama/Neve: 0.1 a 0.3</div>
+                    <input type="number" id="carFriction" value="0.2" step="0.05" min="0.05" max="1.0">
+                </div>
+            </div>
+
+            <button class="btn-simular" onclick="runSimulation()">PROCESSAR ANÁLISE</button>
+        </aside>
+
+        <!-- Painel de Visualização Canvas -->
+        <section class="canvas-container">
+            <div class="engine-overlay" id="engine-log">
+                STATUS: IDLE<br>
+                WAITING FOR PARAMETERS...
+            </div>
+            <canvas id="simCanvas"></canvas>
+        </section>
+
+        <!-- Painel de Resultados Técnicos -->
+        <aside class="panel panel-right">
+            <div class="section-header">📊 Resultados Analíticos</div>
+
+            <div class="result-block">
+                <div class="result-label">Volume de Chuva Acumulado</div>
+                <div class="result-value" id="res-vol">-- m³</div>
+                <div class="result-details">Massa de água precipitando sobre a bacia de contribuição durante a
+                    tempestade.</div>
+            </div>
+
+            <div class="result-block">
+                <div class="result-label">Fator de Segurança (FS) do Talude</div>
+                <div class="result-value" id="res-fs">--</div>
+                <div class="result-details">Relação entre as tensões resistentes (coesão do solo) e atuantes. FS < 1
+                        indica ruptura iminente do maciço.</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-label">Carga Hidrodinâmica de Impacto</div>
+                    <div class="result-value" id="res-impact">-- kN</div>
+                    <div class="result-details">Empuxo dinâmico das forças cinéticas do fluxo de detritos (\(F =
+                        \frac{1}{2}\rho v^2 A + \gamma_{mix} z A\)) na face exposta.</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-label">Estado Limite do Alvo (Resistência)</div>
+                    <button class="help-btn" style="position:relative; float:right; top:-25px; right:0px;">?</button>
+                    <div class="tooltip" style="margin-bottom: 10px;">Regra de Colapso (Estado Limite Último): Se o
+                        valor da Carga Hidrodinâmica (Força da enxurrada ou lama) superar este valor da Resistência, a
+                        estrutura entrará em colapso e será arrastada!</div>
+                    <div class="result-value" id="res-target-cap">-- kN</div>
+                    <div class="result-details" id="res-target-desc">Limite de escoamento/cisalhamento transversal
+                        estrutural antes da falha.</div>
+                </div>
+
+                <div class="section-header">🛑 LAUDO TÉCNICO</div>
+                <div class="result-block">
+                    <div class="result-value" id="res-verdict" style="font-size: 1.1rem;">Aguardando execução...</div>
+                    <div class="result-details" id="res-verdict-desc">-</div>
+                </div>
+
+        </aside>
+    </main>
+
+    <script>
+        // --- UI & Logic Setup ---
+        function toggleTargetFields() {
+            const type = document.getElementById('targetType').value;
+            if (type === 'house') {
+                document.getElementById('houseFields').style.display = 'block';
+                document.getElementById('carFields').style.display = 'none';
+                document.getElementById('res-target-desc').innerText = "Limite de cisalhamento e colapso dos pilares estruturais da face à montante.";
+            } else {
+                document.getElementById('houseFields').style.display = 'none';
+                document.getElementById('carFields').style.display = 'block';
+                document.getElementById('res-target-desc').innerText = "Força necessária para romper o atrito estático (Massa x Gravidade x μ) OR Tensão de escoamento superada (Aço).";
+            }
+        }
+
+        // --- Physics Engine & Canvas ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const log = document.getElementById('engine-log');
+
+        // Sim data
+        let state = 'idle'; // idle, calc, flow, result
+        let frameId;
+        let flowProgress = 0; // 0 to 1
+        let simResults = {};
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            drawWireframe();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Drawing Utilities (Technical Style)
+        function drawLine(x1, y1, x2, y2, color = '#4a5568', width = 1, dashed = false) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            if (dashed) ctx.setLineDash([5, 5]);
+            else ctx.setLineDash([]);
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawVector(x, y, dx, dy, color, label) {
+            const headlen = 10;
+            const angle = Math.atan2(dy, dx);
+            const ex = x + dx;
+            const ey = y + dy;
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(x, y);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - headlen * Math.cos(angle - Math.PI / 6), ey - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(ex - headlen * Math.cos(angle + Math.PI / 6), ey - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+
+            if (label) {
+                ctx.font = "12px 'Roboto Mono'";
+                ctx.fillText(label, ex + 5, ey - 5);
+            }
+        }
+
+        function drawWireframe() {
+            const W = canvas.width;
+            const H = canvas.height;
+            const slope = parseFloat(document.getElementById('slopeAngle').value);
+            const targetType = document.getElementById('targetType').value;
+
+            ctx.clearRect(0, 0, W, H);
+
+            // Ground & Slope Base Mathematics
+            const slopeRad = (slope * Math.PI) / 180;
+            const groundY = H - 80; // Flat ground plane for targets
+            const slopeTopY = 50;
+
+            // Calculate intersection point (toe of the slope)
+            // Fix slope start at left side (x=50)
+            const slopeStartX = 50;
+            const drop = groundY - slopeTopY;
+            const slopeWidth = drop / Math.tan(slopeRad);
+            const toeX = slopeStartX + slopeWidth; // This is where the flat ground begins
+
+            // 1. Draw Slope Profile (Cross-section)
+            ctx.fillStyle = 'rgba(74, 85, 104, 0.2)';
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(0, slopeTopY); // extend left
+            ctx.lineTo(slopeStartX, slopeTopY); // Crest
+            ctx.lineTo(toeX, groundY); // Toe
+            ctx.lineTo(W, groundY); // Flat ground extending right
+            ctx.lineTo(W, H); // Bottom Right
+            ctx.lineTo(0, H); // Bottom Left
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Hash patterns for ground
+            for (let i = 0; i < W; i += 20) {
+                drawLine(i, groundY, i - 10, groundY + 10, '#334155');
+            }
+
+            // Angle indicator
+            ctx.beginPath();
+            ctx.arc(toeX, groundY, 40, Math.PI, Math.PI + slopeRad);
+            ctx.strokeStyle = varColor('--primary');
+            ctx.stroke();
+            ctx.fillStyle = varColor('--primary');
+            ctx.font = "12px 'Roboto Mono'";
+            ctx.fillText(`θ=${slope}°`, toeX - 55, groundY - 15);
+
+            // 2. Draw Target
+            // Position target 50px away from the toe, ALWAYS ON FLAT GROUND.
+            const targetX = toeX + 60;
+            const targetY = groundY;
+
+            ctx.strokeStyle = '#0ea5e9'; // Cyan wireframe
+            ctx.lineWidth = 1.5;
+
+            // Target Deflection/Failure animation offset
+            let tx = targetX;
+            let rot = 0;
+            if (state === 'result' && simResults.failed) {
+                tx += 50; // Swept away
+                rot = (targetType === 'car') ? 0.5 : 0.2;
+            }
+
+            ctx.save();
+            ctx.translate(tx, targetY);
+            ctx.rotate(rot);
+
+            if (targetType === 'house') {
+                const floors = parseInt(document.getElementById('houseFloors').value);
+                const h = floors * 30; // 30px per floor
+                const w = 50; // Width
+                // Draw House Box
+                ctx.strokeRect(0, -h, w, h);
+                // Draw Roof
+                ctx.beginPath();
+                ctx.moveTo(-5, -h);
+                ctx.lineTo(w / 2, -h - 20);
+                ctx.lineTo(w + 5, -h);
+                ctx.stroke();
+
+                // Draw columns representation (pillars)
+                drawLine(5, 0, 5, -h, '#0ea5e9');
+                drawLine(w - 5, 0, w - 5, -h, '#0ea5e9');
+
+                ctx.fillStyle = '#0ea5e9';
+                ctx.fillText(`ESTRUTURA`, 0, -h - 30);
+            } else {
+                // Car wireframe (Side view)
+                // Draw Chassis
+                ctx.strokeRect(0, -20, 80, 15);
+                // Draw Cabin
+                ctx.strokeRect(15, -35, 45, 15);
+                // Wheels
+                ctx.beginPath(); ctx.arc(15, -5, 8, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(65, -5, 8, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.fillStyle = '#0ea5e9';
+                ctx.fillText(`VEÍCULO`, 10, -45);
+
+                // Indicate normal force and friction at wheels
+                drawVector(40, -5, 0, 30, '#f59e0b', 'W'); // Weight vector down
+            }
+            ctx.restore();
+
+            // 3. Draw Flow Dynamics (If simulating)
+            if (state === 'flow' || state === 'result') {
+                // Determine flow position down the slope
+                const pathLen = Math.sqrt(Math.pow(toeX - slopeStartX, 2) + Math.pow(groundY - slopeTopY, 2));
+
+                // Assume flow goes from crest, down slope, and hits target
+                let currX, currY;
+
+                if (state === 'result') {
+                    currX = targetX;
+                    currY = targetY;
+                } else {
+                    // Moving down slope
+                    currX = slopeStartX + (toeX - slopeStartX) * flowProgress;
+                    currY = slopeTopY + (groundY - slopeTopY) * flowProgress;
+                    // Move across flat
+                    if (flowProgress > 1) {
+                        let flatProg = flowProgress - 1;
+                        currX = toeX + (targetX - toeX) * flatProg;
+                        currY = groundY;
+                    }
+                }
+
+                // Draw Debris or Water Volume based on FS
+                const isLandslide = simResults.landslideOccurred;
+                ctx.fillStyle = isLandslide ? 'rgba(239, 68, 68, 0.4)' : 'rgba(14, 165, 233, 0.4)'; // Red mud or Blue water
+                ctx.strokeStyle = isLandslide ? '#ef4444' : '#0ea5e9';
+
+                ctx.beginPath();
+                ctx.moveTo(slopeStartX, slopeTopY);
+                // Draw top surface of flow
+                ctx.lineTo(currX, currY - (isLandslide ? 20 : 5)); // Thickness: 20px mud, 5px water
+                ctx.lineTo(currX, currY);
+                ctx.lineTo(toeX, groundY);
+                ctx.fill();
+
+                // Draw Impact Vector if at target
+                if (state === 'result' && simResults.impactForce > 0) {
+                    drawVector(targetX - 40, targetY - 10, 40, 0, '#ef4444', `Fd ≈ ${simResults.impactForce.toFixed(0)}kN`);
+                }
+            }
+        }
+
+        function varColor(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
+        // --- Core Engineering Calculations ---
+        function calculateEngineering() {
+            // Inputs
+            const slopeDist = parseFloat(document.getElementById('slopeDistance').value);
+            const rainInt = parseFloat(document.getElementById('rainIntensity').value);
+            const rainDur = parseFloat(document.getElementById('rainDuration').value);
+            const slope = parseFloat(document.getElementById('slopeAngle').value);
+            const targetType = document.getElementById('targetType').value;
+
+            // 1. Hydrology: Rain Volume
+            // V (m³) = (Distância * Largura Unitária de 1m) * Precipitação (m)
+            const rainPrecip_m = (rainInt * rainDur) / 1000;
+            const volumeAgua = slopeDist * rainPrecip_m; // per meter width
+
+            // 2. Geotech: Fator de Segurança (FS) - Infinite Slope Model Simplificado
+            // FS = (c' + (gamma_s * z * cos^2θ - u) * tan(phi')) / (gamma_s * z * sinθ * cosθ)
+            const gamma_soil = 18; // kN/m³ saturated
+            const z_depth = 3; // m failure plane depth
+            const cohesion = 15; // kPa typical residual soil
+            const phi = 30; // degrees internal friction angle
+            const theta_rad = slope * Math.PI / 180;
+
+            // Water saturation effect
+            let sat_ratio = rainPrecip_m / 0.5; // normalize against 500mm event
+            if (sat_ratio > 1) sat_ratio = 1;
+            const porePressure = sat_ratio * 9.81 * z_depth; // kPa
+
+            const normalStress = gamma_soil * z_depth * Math.pow(Math.cos(theta_rad), 2);
+            const shearResistance = cohesion + (normalStress - porePressure) * Math.tan(phi * Math.PI / 180);
+            const shearStress = gamma_soil * z_depth * Math.sin(theta_rad) * Math.cos(theta_rad);
+
+            let fs = shearResistance / shearStress;
+            if (fs < 0) fs = 0.1; // Negative implies massive failure
+
+            // 3. Flow Dynamics (Water Flow OR Debris Flow)
+            let impactForce = 0;
+            let landslideOccurred = fs < 1.0;
+            let v_flow = 0;
+            let h_flow = 0;
+            let rho_flow = 1000; // Água limpa por padrão
+
+            // Mesmo sem deslizamento do solo, a enxurrada (água) gera força!
+            if (!landslideOccurred) {
+                // Água escoando superficialmente (Manning simplificado)
+                v_flow = Math.sqrt(2 * 9.81 * (slopeDist / 2) * Math.sin(theta_rad)); // Velocity from runoff
+                if (v_flow > 15) v_flow = 15; // cap turbulent water
+                h_flow = (rainPrecip_m * slopeDist) / v_flow; // conservação de massa simplificada
+                if (h_flow < 0.05) h_flow = 0.05; // min 5cm de lâmina d'agua
+                rho_flow = 1100; // Água barrenta (kg/m³)
+
+                // Força hidrodinâmica da enxurrada
+                impactForce = 0.5 * rho_flow * Math.pow(v_flow, 2) * h_flow / 1000; // kN/m
+            }
+            if (landslideOccurred) {
+                // Se o maciço rompe, vira fluxo de detritos! Força muito maior e densa.
+                v_flow = Math.sqrt(2 * 9.81 * slopeDist * Math.sin(theta_rad)); // Approximated terminal v
+                if (v_flow > 25) v_flow = 25; // cap debris flow velocity
+                h_flow = 1.0; // 1m debris wave
+                rho_flow = 2000; // Densidade de massa de lama com pedras
+
+                // Força hidrodinâmica do deslizamento
+                impactForce = 0.5 * rho_flow * Math.pow(v_flow, 2) * h_flow / 1000; // kN/m
+            }
+
+            // 4. Target Resistance Evaluation
+            let targetResist = 0;
+            let targetFailed = false;
+            let verbText = "";
+            let reqType = "";
+
+            if (targetType === 'house') {
+                const area = parseFloat(document.getElementById('houseArea').value);
+                const mat = document.getElementById('houseMaterial').value;
+                // Exposed frontal width approx sqrt(area)
+                const width = Math.sqrt(area);
+                // Total Impact = ImpactForce (kN/m) * width
+                const totalImpact = impactForce * width;
+
+                // Typical global shear capacities for a residential facade wall (Simplified kN)
+                let cap_map = {
+                    'concreto_25': 3500, // Very strong
+                    'concreto_40': 5000,
+                    'alvenaria': 800,  // Weak lateral resistance
+                    'madeira': 300
+                };
+                targetResist = cap_map[mat];
+                targetFailed = (totalImpact > targetResist); // Falha independente de ser lama ou agua! Se a força passar, quebra.
+                impactForce = totalImpact; // Update for display
+
+                if (targetFailed) {
+                    verbText = landslideOccurred
+                        ? "COLAPSO ESTRUTURAL (Ruptura por Cisalhamento devido a Lama e Detritos)"
+                        : "COLAPSO ESTRUTURAL (Ruptura causada pela força exclusiva da Enxurrada/Água!)";
+                } else {
+                    verbText = "ESTRUTURA ÍNTEGRA (A Resistência é Mair que a Força de Empuxo gerada)";
+                }
+            } else {
+                // Car evaluation
+                const mass = parseFloat(document.getElementById('carMass').value);
+                const mat = document.getElementById('carMaterial').value;
+                const fric = parseFloat(document.getElementById('carFriction').value);
+
+                // Assume standard sedan side exposed length 4.5m
+                const width = 4.5;
+                const totalImpact = impactForce * width;
+
+                // Failure Mode 1: Sliding (Arraste)
+                // Frictional Resistance = mass(kg) * g * mu / 1000 = kN
+                const slideResistance = (mass * 9.81 * fric) / 1000;
+
+                // Failure Mode 2: Material Yield (Porta amassada)
+                // Approx lateral yield force (Simplified)
+                let yield_map = {
+                    'aco_antigo': 400, // Thicker sheet
+                    'ahss': 450, // High strength, thinner but stronger
+                    'aluminio': 250 // Weaker alloy sheet
+                };
+                const yieldResistance = yield_map[mat];
+
+                // Car fails if it slides away OR door yields catastrophically
+                targetResist = Math.min(slideResistance, yieldResistance); // Display the weakest link
+
+                let slided = totalImpact > slideResistance;
+                let yielded = totalImpact > yieldResistance;
+                targetFailed = (slided || yielded); // Independente de lama, a força da água pode falhar
+                impactForce = totalImpact;
+
+                if (!landslideOccurred) {
+                    if (targetFailed) {
+                        verbText = "VEÍCULO ARRASTADO (Apenas Enxurrada de Água! Força venceu o atrito)";
+                    } else {
+                        verbText = "ESTÁVEL (Apenas Chuva / Enxurrada. Impacto Seguro)";
+                    }
+                }
+                else if (targetFailed) {
+                    if (slided && yielded) verbText = "VEÍCULO SOTERRADO / DEFORMADO PLASTICAMENTE";
+                    else if (slided) verbText = "VEÍCULO ARRASTADO POR DESLIZAMENTO (Atrito superado)";
+                    else verbText = "COLAPSO DO VEÍCULO (Lateral escoada pela lama)";
+                } else {
+                    verbText = "VEÍCULO INTACTO AO DESLIZAMENTO (Empuxo < Limites Resistentes)";
+                }
+            }
+
+            // Results Pack
+            return {
+                volumeAgua: volumeAgua,
+                fs: fs,
+                landslideOccurred: landslideOccurred,
+                impactForce: impactForce,
+                targetResist: targetResist,
+                failed: targetFailed,
+                verdict: verbText
+            };
+        }
+
+        function runSimulation() {
+            if (frameId) cancelAnimationFrame(frameId);
+            state = 'calc';
+            flowProgress = 0;
+            log.innerHTML = "STATUS: CALCULATING...<br>SOLVING NAVIER-STOKES & MOHR-COULOMB...";
+
+            // Do Math
+            simResults = calculateEngineering();
+
+            // Format Outputs
+            document.getElementById('res-vol').innerText = `${simResults.volumeAgua.toLocaleString('pt-BR')} m³ / m`;
+            document.getElementById('res-fs').innerText = simResults.fs.toFixed(2);
+            document.getElementById('res-fs').className = 'result-value ' + (simResults.fs < 1 ? 'danger' : 'success');
+
+            // Slide happens -> Animate always now (Water or Mud)
+            state = 'flow';
+            log.innerHTML = simResults.landslideOccurred ? "STATUS: DYNAMIC MESH SIMULATION...<br>COMPUTING DEBRIS TRAJECTORY" : "STATUS: STEADY FLOW MESH...<br>COMPUTING RAINWATER RUNOFF";
+            animateFlow();
+        }
+
+        function animateFlow() {
+            flowProgress += 0.03; // Speed of animation down slope (frames)
+            drawWireframe();
+
+            if (flowProgress < 1.5) { // 1 to reach toe, 0.5 to reach target
+                frameId = requestAnimationFrame(animateFlow);
+            } else {
+                finishSim();
+            }
+        }
+
+        function finishSim() {
+            state = 'result';
+            drawWireframe(); // Final draw with impact vector
+
+            document.getElementById('res-impact').innerText = `${simResults.impactForce.toFixed(1)} kN`;
+            document.getElementById('res-impact').className = 'result-value ' + (simResults.failed ? 'danger' : 'warning');
+
+            document.getElementById('res-target-cap').innerText = `${simResults.targetResist.toFixed(1)} kN`;
+
+            const vDiv = document.getElementById('res-verdict');
+            vDiv.innerText = simResults.verdict;
+            if (simResults.failed) {
+                vDiv.className = 'result-value danger';
+                log.innerHTML = "STATUS: FINISHED<br>TARGET FAILED - LIMIT STATE EXCEEDED";
+                log.style.color = "var(--danger)";
+            } else {
+                vDiv.className = 'result-value success';
+                log.innerHTML = "STATUS: FINISHED<br>TARGET SURVIVED - ELASTIC RANGE";
+                log.style.color = "var(--success)";
+            }
+        }
+
+        // Init
+        resizeCanvas();
+        toggleTargetFields();
+
+    </script>
+</body>
+
+</html>
